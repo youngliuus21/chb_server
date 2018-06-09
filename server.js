@@ -1,4 +1,8 @@
 var express = require('express')
+var bodyParser = require('body-parser')
+var dialog = require('./my/dialog')
+
+var jsonParser = bodyParser.json()
 
 function startServer(){
     var app = express()
@@ -17,8 +21,27 @@ function startServer(){
     
     app.use('/', express.static('res', options))
     
-    app.get('/fld1', function (req, res) {
-      res.send('hello world')
+    var session = require('express-session')
+    app.use(session({
+        name:'chb_session',
+      secret: 'chatbot server',
+      resave: false,
+      saveUninitialized: true,
+      cookie: { secure: false }
+    }))
+    
+    app.use('/dialog', dialog)
+    
+    app.get('/fld1', jsonParser, function (req, res) {
+      if (!req.session.value)
+          req.session.value = 1
+      else
+          req.session.value += 1
+          
+    
+      console.log('get fld1, session:'+JSON.stringify(req.session))
+      
+      res.end('hello world')
     })
     
     var server = require('http').createServer(app)
