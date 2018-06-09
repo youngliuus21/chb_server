@@ -14,7 +14,13 @@ html
           div(class="card text-white bg-info mb-3")
             h5(class="card-header") Dialog Status
             div(class="card-body")
-              span Status
+              template(v-if="intents.length > 0")
+                h5.card-title Intents
+                p.card-text(v-for="intent in intents") {{intent.intent}}({{intent.confidence}})
+              template(v-if="entities.length > 0")
+                h5.card-title Entities
+                p.card-text(v-for="entity in entities") {{entity.entity}}:{{entity.value}}({{entity.confidence}})
+    
           div(class="card text-white bg-info mb-3")
             h5(class="card-header") Screen Output
             div(class="card-body") Screen
@@ -37,8 +43,8 @@ html
                 v-model="input_text"
                 @keyup.enter="sub_input")
     
-    script(src="https://code.jquery.com/jquery-3.3.1.slim.min.js" 
-      integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" 
+    script(src="https://code.jquery.com/jquery-3.3.1.min.js" 
+      integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" 
       crossorigin="anonymous")
     script(src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" 
       integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" 
@@ -51,22 +57,49 @@ html
       var app = new Vue({
         el: '#container1',
         data: {
-          messages:[
-            {text:'text1'},
-            {text:'text2'}
-          ],
-          input_text:""
+          messages:[],
+          input_text:"",
+          intents:[],
+          entities:[]
         },
         methods: {
           sub_input: function(event) {
             console.log('user input:'+this.input_text)
             
             var input = this.input_text
-            this.messages.push({text:input, is_input:true})
+            if (input != '')
+              this.messages.push({text:input, is_input:true})
             this.input_text = ''
             
-            var msg_list = document.getElementById('msg_list')
-            msg_list.scrollTop = msg_list.scrollHeight
+            $.ajax({
+                type:'POST',
+                url:'say',
+                data:JSON.stringify({input:input}),
+                async:true,
+                success:function(res){
+                    if (res.ok == undefined || res.ok == false) {
+                      
+                      return
+                    }
+                        
+                    app.intents = res.intents
+                    app.entities = res.entities
+                    app.messages.push({text:'@:'+res.output})
+                    
+                    setTimeout(function(){
+                      var msg_list = document.getElementById('msg_list')
+                      msg_list.scrollTop = msg_list.scrollHeight
+                    })
+                },
+                contentType:"application/json; charset=utf-8",
+                dataType:'json'
+            })
+            
+            
           }
         }
+      })
+      
+      $(document).ready(function(){
+        app.sub_input.apply(app)
       })
