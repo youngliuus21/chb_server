@@ -7,6 +7,10 @@ var jsonParser = bodyParser.json()
 function startServer(){
     var app = express()
     
+    app.set('views', './view');
+    app.set('view engine', 'pug');
+    app.locals.pretty = true
+    
     var options = {
       dotfiles: 'ignore',
       etag: false,

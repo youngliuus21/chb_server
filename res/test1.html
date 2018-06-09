@@ -19,9 +19,15 @@
     <nav class="navbar navbar-dark bg-dark">
       <span class="navbar-brand mb-0 h1">Application Assistant</span>
     </nav>
-    <div id='container1' class="container-fluid bg-secondary">
+    <div id='container1' class="container-fluid bg-secondary" style="height:100%">
       <div class="row">
         <div class="col-sm-6 mt-3">
+          <div class="card text-white bg-info mb-3">
+            <h5 class="card-header">Dialog Status</h5>
+            <div class="card-body">
+              card 2
+            </div>
+          </div>
           <div class="card text-white bg-info mb-3">
             <h5 class="card-header">Screen Output</h5>
             <div class="card-body">
@@ -35,19 +41,20 @@
             </div>
           </div>
         </div>
-        <div class="col-sm-6 mt-3">
-          <div class="card text-white bg-info mb-3">
-            <h5 class="card-header">Dialog Status</h5>
-            <div class="card-body">
-              card 2
-            </div>
-          </div>
-          <div class="card  bg-light mb-3">
+        <div class="col-sm-6 mt-3" style="height:90%">
+          
+          <div class="card  bg-light mb-3" style="height:90%">
             <h5 class="card-header">Dialog</h5>
-            <div class="card-body" style="height:300px; overflow-y:scroll;">
+            <div class="card-body position-relative" style="height:300px; overflow-y:scroll;">
               <ul class="list-group  list-group-flush">
                 <li class="list-group-item" v-for="msg in messages">{{msg.text}}</li>
               </ul>
+              <div class="input-group mb-3 position-absolute" style="left;0;bottom:0;width:95%">
+                <div class="input-group-prepend">
+                  <span class="input-group-text" id="basic-addon1">></span>
+                </div>
+                <input type="text" class="form-control" placeholder="start typing here..." aria-describedby="basic-addon1">
+              </div>
             </div>
           </div>
         </div>
