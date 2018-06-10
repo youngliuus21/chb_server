@@ -40,6 +40,19 @@ function roundResponse(response) {
   roundArray(response.entities)
 }
 
+var test_socket
+function ws_handler(socket) {
+  console.log('socket connected...')
+  test_socket = socket
+  socket.on('request', (req) => {
+    
+  })
+}
+
+function test_ws_send(msg) {
+  test_socket.emit('action.status', {text:msg})
+}
+
 router.post('/say', jsonParser, function(req, res){
   
   var input = req.body.input
@@ -61,7 +74,10 @@ router.post('/say', jsonParser, function(req, res){
         input:response.input,
         intents:response.intents,
         entities:response.entities})
+        
+      test_ws_send('action success.')
     })
 })
 
+router.ws_handler = ws_handler
 module.exports = router

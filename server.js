@@ -4,6 +4,18 @@ var dialog = require('./my/dialog')
 
 var jsonParser = bodyParser.json()
 
+function startWebSocket(server, session) {
+  var io = require('socket.io')(server)
+  io.use(function(socket, next) {
+      session(socket.request, socket.request.res, next)
+  })
+  
+  server.io = io
+  
+  var nsp = io.of('/dialog')
+  nsp.on('connection', dialog.ws_handler)
+}
+
 function startServer(){
     var app = express()
     
@@ -26,29 +38,21 @@ function startServer(){
     app.use('/', express.static('res', options))
     
     var session = require('express-session')
-    app.use(session({
+    var mySession = session({
         name:'chb_session',
       secret: 'chatbot server',
       resave: false,
       saveUninitialized: true,
       cookie: { secure: false }
-    }))
+    })
+    
+    app.use(mySession)
     
     app.use('/dialog', dialog)
     
-    app.get('/fld1', jsonParser, function (req, res) {
-      if (!req.session.value)
-          req.session.value = 1
-      else
-          req.session.value += 1
-          
-    
-      console.log('get fld1, session:'+JSON.stringify(req.session))
-      
-      res.end('hello world')
-    })
-    
     var server = require('http').createServer(app)
+
+    startWebSocket(server, mySession)
     
     server.listen(18888, function(){
         console.log('server started@18888...')

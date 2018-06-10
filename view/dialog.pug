@@ -12,7 +12,14 @@ html
       div(class="row")
         div(class="col-sm-6 mt-3")
           div(class="card text-white bg-info mb-3")
-            h5(class="card-header") Dialog Status
+            div(class="card-header")
+              ul(class="nav nav-tabs card-header-tabs")
+                li.nav-item
+                  a(class="nav-link active" href="#") Dialog Status
+                li.nav-item
+                  a(class="nav-link" href="#") Screen Shots
+                li.nav-item
+                  a(class="nav-link active" href="#") Action Status
             div(class="card-body")
               template(v-if="intents.length > 0")
                 h5.card-title Intents
@@ -26,7 +33,9 @@ html
             div(class="card-body") Screen
           div(class="card")
             h5(class="card-header") Action Status
-            div(class="card-body") Action
+            div(class="card-body"  style="overflow-y:scroll;")
+              ul(class="list-group  list-group-flush")
+                li(class="list-group-item" v-for="act in action_status") {{act.text}}
         div(class="col-sm-6 mt-3" style="height:90%")
           div(class="card  bg-light" style="height:90%")
             h5(class="card-header") Dialog
@@ -59,7 +68,10 @@ html
     script(src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" 
       integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" 
       crossorigin="anonymous")
-    script(src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js")
+    script(src="https://cdn.bootcss.com/vue/2.5.16/vue.js" integrity="sha384-uDHwRgVGzCbHUyl2dKQHqgCAab0OIx/w9PqT3pvjaX/ZGARjKanO5mJGjmdixblb" crossorigin="anonymous")
+    script(src="https://cdn.bootcss.com/socket.io/2.1.1/socket.io.js" 
+      integrity="sha384-l5mJc3Z+1vy9cW5SL9rsLY7Lj0t9oELCwHOEXCC11hCf119un/8RwSFp99rwgIyo" 
+      crossorigin="anonymous")
     script(type='text/javascript').
       function genEntityString(input, entities) {
         var spans = []
@@ -89,7 +101,9 @@ html
           messages:[],
           input_text:"",
           intents:[],
-          entities:[]
+          entities:[],
+          action_status:[],
+          show_status_card:0
         },
         methods: {
           sub_input: function(event) {
@@ -131,6 +145,17 @@ html
         }
       })
       
+      var ws_socket = null
+      function beginWSocket() {
+        ws_socket = io('/dialog')
+        
+        ws_socket.on('action.status', (res) => {
+          console.log('ws received:'+JSON.stringify(res))
+          app.action_status.push({text:res.text})
+        })
+      }
+      
       $(document).ready(function(){
         //app.sub_input.apply(app)
+        beginWSocket()
       })
