@@ -30,10 +30,17 @@ html
         div(class="col-sm-6 mt-3" style="height:90%")
           div(class="card  bg-light" style="height:90%")
             h5(class="card-header") Dialog
+              button(type="button" class="btn btn-outline-primary float-right") Reset
             div(id="msg_list" class="card-body" style="overflow-y:scroll;")
               ul(class="list-group  list-group-flush")
                 li(class="list-group-item" v-for="msg in messages"
-                 v-bind:style="{'text-align':msg.is_input?'right':'left'}") {{msg.text}}
+                 v-bind:style="{'text-align':msg.is_input?'right':'left'}")
+                  template(v-if="msg.withentity == true")
+                    span(v-for="span in msg.spans" 
+                      v-bind:style="{'text-decoration':span.isentity?'underline':'none'}") {{span.text}}
+                  template(v-else)
+                    span {{msg.text}}
+
           div(class="card  bg-light")
             div(class="input-group")
               div(class="input-group-prepend")
@@ -54,6 +61,28 @@ html
       crossorigin="anonymous")
     script(src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js")
     script(type='text/javascript').
+      function genEntityString(input, entities) {
+        var spans = []
+        
+        var last = 0
+        if (entities) {
+          entities.forEach(function(entity) {
+            var loc = entity.location
+            if (last < loc[0]) {
+              spans.push({text:input.substring(last, loc[0]), isentity:false})
+            }
+          
+            spans.push({text:input.substring(loc[0], loc[1]), isentity:true})
+            last = loc[1]
+          })
+        }
+        if (last < input.length) {
+          spans.push({text:input.substring(last), isentity:false})
+        }
+        
+        return {withentity:true, spans:spans, is_input:true}
+      }
+      
       var app = new Vue({
         el: '#container1',
         data: {
@@ -67,10 +96,6 @@ html
             console.log('user input:'+this.input_text)
             
             var input = this.input_text
-            if (input != '')
-              this.messages.push({text:input, is_input:true})
-            this.input_text = ''
-            
             $.ajax({
                 type:'POST',
                 url:'say',
@@ -78,15 +103,21 @@ html
                 async:true,
                 success:function(res){
                     if (res.ok == undefined || res.ok == false) {
-                      
+                      console.log('response error')
                       return
                     }
                         
-                    app.intents = res.intents
-                    app.entities = res.entities
+                    if (res.input && res.input.text) {
+                      app.intents = res.intents
+                      app.entities = res.entities
+                      app.messages.push(genEntityString(res.input.text, res.entities))
+                    } else if (input) {
+                      app.message.push({text:input,is_input:true})
+                    }
+                    
                     app.messages.push({text:'@:'+res.output})
                     
-                    setTimeout(function(){
+                    setTimeout(function(){//scroll the list to the end
                       var msg_list = document.getElementById('msg_list')
                       msg_list.scrollTop = msg_list.scrollHeight
                     })
@@ -95,11 +126,11 @@ html
                 dataType:'json'
             })
             
-            
+            this.input_text = ''
           }
         }
       })
       
       $(document).ready(function(){
-        app.sub_input.apply(app)
+        //app.sub_input.apply(app)
       })
