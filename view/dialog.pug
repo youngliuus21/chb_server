@@ -82,10 +82,12 @@ html
             var loc = entity.location
             if (last < loc[0]) {
               spans.push({text:input.substring(last, loc[0]), isentity:false})
+            } else if (loc[0] < last) {//overlapped entity, jump it.
+              last = loc[1]
+            } else {
+              spans.push({text:input.substring(loc[0], loc[1]), isentity:true})
+              last = loc[1]
             }
-          
-            spans.push({text:input.substring(loc[0], loc[1]), isentity:true})
-            last = loc[1]
           })
         }
         if (last < input.length) {
