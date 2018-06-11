@@ -40,17 +40,42 @@ function roundResponse(response) {
   roundArray(response.entities)
 }
 
-var test_socket
 function ws_handler(socket) {
   console.log('socket connected...')
-  test_socket = socket
-  socket.on('request', (req) => {
-    
+  
+  socket.on('dialog.reset', (data) => {
+    socket.request.session.dialog_context = null
+    socket.emit('action.status', {text:'reset success.'})
   })
-}
-
-function test_ws_send(msg) {
-  test_socket.emit('action.status', {text:msg})
+  
+  socket.on('dialog.input', (data) => {
+    var input = data.input
+    
+    console.log('dialog.input received:'+JSON.stringify(data))
+    
+    getService().message({
+      workspace_id: workspace_id,
+      input: {text:input},
+      context:socket.request.session.dialog_context
+      }, function(err, response){
+        if (err) {
+          console.error(err)
+          res.json({ok:false, err:err})
+          return
+        }
+      
+        roundResponse(response)
+        socket.request.session.dialog_context = response.context
+        
+        socket.emit('dialog.output', {ok:true, output:response.output.text,
+          input:response.input,
+          client_seq:data.client_seq,
+          intents:response.intents,
+          entities:response.entities})
+          
+        socket.emit('action.status', {text:'action success.'})
+      })
+  })
 }
 
 router.post('/say', jsonParser, function(req, res){

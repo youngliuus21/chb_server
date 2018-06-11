@@ -11,7 +11,7 @@ html
     div(id='container1' class="container-fluid bg-secondary" style="height:100%")
       div(class="row")
         div(class="col-sm-6 mt-3")
-          div(class="card text-white bg-info mb-3")
+          div(class="card text-white mb-3")
             div(class="card-header")
               ul(class="nav nav-tabs card-header-tabs")
                 li.nav-item
@@ -39,7 +39,7 @@ html
         div(class="col-sm-6 mt-3" style="height:90%")
           div(class="card  bg-light" style="height:90%")
             h5(class="card-header") Dialog
-              button(type="button" class="btn btn-outline-primary float-right") Reset
+              button(type="button" class="btn btn-outline-primary float-right" v-on:click="ws_dialog_reset") Reset
             div(id="msg_list" class="card-body" style="overflow-y:scroll;")
               ul(class="list-group  list-group-flush")
                 li(class="list-group-item" v-for="msg in messages"
@@ -57,7 +57,7 @@ html
               input(type="text" class="form-control" placeholder="start typing here..." 
                 aria-describedby="basic-addon1"
                 v-model="input_text"
-                @keyup.enter="sub_input")
+                @keyup.enter="ws_sub_input")
     
     script(src="https://code.jquery.com/jquery-3.3.1.min.js" 
       integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" 
@@ -95,6 +95,12 @@ html
         return {withentity:true, spans:spans, is_input:true}
       }
       
+      function scrolltobottom(elname) {
+        setTimeout(function(){//scroll the list to the end
+          var msg_list = document.getElementById(elname)
+          msg_list.scrollTop = msg_list.scrollHeight})
+      }
+      
       var app = new Vue({
         el: '#container1',
         data: {
@@ -105,7 +111,29 @@ html
           action_status:[],
           show_status_card:0
         },
+        watch: {
+          messages: function(val) {
+            scrolltobottom('msg_list')
+          }
+        },
         methods: {
+          ws_sub_input: function(event) {
+            console.log('ws user input:'+this.input_text)
+            var input = this.input_text
+            
+            this.input_text = ''
+            this.messages.push({text:input,is_input:true})
+            wsSendInputMessage({input:input, client_seq:this.messages.length-1})
+            
+          },
+          ws_dialog_reset: function(event) {
+            ws_socket.emit('dialog.reset', {})
+            this.input_text = ''
+            this.messages = []
+            this.intents = []
+            this.entities = []
+            this.action_status = []
+          },
           sub_input: function(event) {
             console.log('user input:'+this.input_text)
             
@@ -153,6 +181,32 @@ html
           console.log('ws received:'+JSON.stringify(res))
           app.action_status.push({text:res.text})
         })
+        
+        ws_socket.on('dialog.output', (res) => {
+            if (res.ok == undefined || res.ok == false) {
+              console.log('response error')
+              return
+            }
+            
+            console.log('dialog.output:'+JSON.stringify(res))
+            if (res.input && res.input.text) {
+              app.intents = res.intents
+              app.entities = res.entities
+                if (res.client_seq != undefined) {
+                    app.messages[res.client_seq] = genEntityString(res.input.text, res.entities)
+                } else {
+                    app.messages.push(genEntityString(res.input.text, res.entities))
+                }
+            } else if (input) {
+              app.message.push({text:input,is_input:true})
+            }
+        
+            app.messages.push({text:'@:'+res.output})
+        })
+      }
+      
+      function wsSendInputMessage(msg) {
+        ws_socket.emit('dialog.input', msg)
       }
       
       $(document).ready(function(){
