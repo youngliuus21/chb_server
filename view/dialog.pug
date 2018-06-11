@@ -16,7 +16,7 @@ html
               ul(class="nav nav-tabs card-header-tabs")
                 li.nav-item
                   a(class="nav-link" v-bind:class="{ active: show_status_card == 0 }" 
-                    v-on:click.stop.prevent="show_status_card=0") Dialog Status
+                    v-on:click.stop.prevent="show_status_card=0") Dialog Analysis
                 li.nav-item
                   a(class="nav-link" v-bind:class="{ active: show_status_card == 1 }" 
                     v-on:click.stop.prevent="show_status_card=1") Screen Shots
@@ -29,7 +29,7 @@ html
                 p.card-text(v-for="intent in intents") {{intent.intent}}({{intent.confidence}})
               template(v-if="entities.length > 0")
                 h5.card-title Entities
-                p.card-text(v-for="entity in entities") {{entity.entity}}:{{entity.value}}({{entity.confidence}})
+                p.card-text(v-for="entity in entities") {{entity.entity}}:{{entity.input}}->{{entity.value}}({{entity.confidence}})
     
             div(class="card-body"  v-if="show_status_card == 1") Screen
             div(class="card-body"  v-if="show_status_card == 2" style="overflow-y:scroll;")
@@ -158,6 +158,14 @@ html
         }
       }
       
+      function processEntitites(array, input) {
+        for (var i in array) {
+          array[i].confidence = Math.round(array[i].confidence*100)/100
+          array[i].input = input.substring(array[i].location[0], array[i].location[1])
+        }
+        
+        return array
+      }
       var app = new Vue({
         el: '#container1',
         data: {
@@ -257,7 +265,7 @@ html
             console.log('dialog.output:'+JSON.stringify(res))
             if (res.input && res.input.text) {
               app.intents = res.intents
-              app.entities = res.entities
+              app.entities = processEntitites(res.entities, res.input.text)
                 if (-1 < res.client_seq) {
                     app.messages[res.client_seq] = genEntityString(res.input.text, res.entities)
                 } else {

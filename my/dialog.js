@@ -37,7 +37,7 @@ function roundArray(arr) {
 
 function roundResponse(response) {
   roundArray(response.intents)
-  roundArray(response.entities)
+//  roundArray(response.entities)
 }
 
 function ws_handler(socket) {
