@@ -1,6 +1,7 @@
 var express = require('express')
 var bodyParser = require('body-parser')
 var AssistantV1 = require('watson-developer-cloud/assistant/v1')
+var io = require('socket.io-client')
 
 var router = express.Router()
 var jsonParser = bodyParser.json()
@@ -40,6 +41,42 @@ function roundResponse(response) {
 //  roundArray(response.entities)
 }
 
+var act_socket = null
+var actResFun = null
+function openActSocket() {
+  act_socket = io('http://localhost:19999/action')
+  
+  act_socket.on('act.status', (data) => {
+    console.log('act.status, get data:'+JSON.stringify(data))
+    
+    if (actResFun)
+      actResFun(data)
+  })
+}
+
+function performanceAction(data, client_socket) {
+  if (!act_socket)
+    openActSocket()
+    
+  actResFun = (res_data) => {
+    client_socket.emit('action.status', res_data)
+  }
+
+  act_socket.emit('dialog.act', data)
+}
+
+router.get('/test', (req, res)=>{
+  if (!act_socket)
+    openActSocket()
+    
+  actResFun = (res_data) => {
+    console.log('test action:'+JSON.stringify(res_data))
+    res.end(JSON.stringify(res_data))
+  }
+  
+  act_socket.emit('dialog.act', {action:'test action'})
+})
+
 function ws_handler(socket) {
   console.log('socket connected...')
   
@@ -73,7 +110,8 @@ function ws_handler(socket) {
           intents:response.intents,
           entities:response.entities})
           
-        socket.emit('action.status', {text:'action success.'})
+        performanceAction({action:'action1'}, socket)
+        //socket.emit('action.status', {text:'action success.'})
       })
   })
 }
