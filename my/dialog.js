@@ -41,44 +41,40 @@ function roundResponse(response) {
 //  roundArray(response.entities)
 }
 
-var act_socket = null
-var actResFun = null
-function openActSocket() {
-  act_socket = io('http://localhost:19999/action')
+var actionCaller = {
+  act_socket:null,
+  actResFun:null,
+  openActSocket: function() {
+    this.act_socket = io('http://localhost:19999/action')
   
-  act_socket.on('act.status', (data) => {
-    console.log('act.status, get data:'+JSON.stringify(data))
+    this.act_socket.on('act.status', (data) => {
+      console.log('act.status, get data:'+JSON.stringify(data))
     
-    if (actResFun)
-      actResFun(data)
-  })
-}
+      if (this.actResFun)
+        this.actResFun(data)
+    })
+  },
 
-function performanceAction(data, client_socket) {
-  if (!act_socket)
-    openActSocket()
+  performanceAction: function(data, fun) {
+    if (!this.act_socket)
+      this.openActSocket()
     
-  actResFun = (res_data) => {
-    client_socket.emit('action.status', res_data)
+    this.actResFun = fun
+
+    this.act_socket.emit('dialog.act', data)
   }
-
-  act_socket.emit('dialog.act', data)
 }
 
 router.get('/test', (req, res)=>{
-  if (!act_socket)
-    openActSocket()
+  actionCaller.performanceAction({action:'test action1'+(new Date()).getTime()}, function(data){
     
-  actResFun = (res_data) => {
-    console.log('test action:'+JSON.stringify(res_data))
-    res.end(JSON.stringify(res_data))
-  }
-  
-  act_socket.emit('dialog.act', {action:'test action'})
+    console.log('test, get data:'+JSON.stringify(data))
+    res.end(JSON.stringify(data))
+  })
 })
 
 function ws_handler(socket) {
-  console.log('socket connected...')
+  console.log((new Date()).toString()+' socket connected...')
   
   socket.on('dialog.reset', (data) => {
     socket.request.session.dialog_context = null
@@ -110,8 +106,14 @@ function ws_handler(socket) {
           intents:response.intents,
           entities:response.entities})
           
-        performanceAction({action:'action1'}, socket)
-        //socket.emit('action.status', {text:'action success.'})
+        if (response.actions) {
+            console.log('response with action:'+JSON.stringify(response))
+        }
+        if (response.actions) {
+          performanceAction(response.actions[0], (res_data)=>{
+            socket.emit('action.status', res_data)
+          })
+        }
       })
   })
 }
