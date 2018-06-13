@@ -41,10 +41,10 @@ function roundResponse(response) {
 //  roundArray(response.entities)
 }
 
-var actionCaller = {
-  act_socket:null,
-  actResFun:null,
-  openActSocket: function() {
+function ActionCaller(callback) {
+  this.act_socket = null
+  this.actResFun = callback
+  this.openActSocket = function() {
     this.act_socket = io('http://localhost:19999/action')
   
     this.act_socket.on('act.status', (data) => {
@@ -52,25 +52,32 @@ var actionCaller = {
     
       if (this.actResFun)
         this.actResFun(data)
+      if (data && data.close == true)//server tells me to close
+        this.close()
     })
-  },
+  }
 
-  performanceAction: function(data, fun) {
+  this.performanceAction = function(data) {
     if (!this.act_socket)
       this.openActSocket()
     
-    this.actResFun = fun
-
     this.act_socket.emit('dialog.act', data)
+  }
+  
+  this.close = function() {
+    if (this.act_socket)
+      this.act_socket.close()
   }
 }
 
 router.get('/test', (req, res)=>{
-  actionCaller.performanceAction({action:'test action1'+(new Date()).getTime()}, function(data){
-    
+  var caller = new ActionCaller(function(data){
     console.log('test, get data:'+JSON.stringify(data))
     res.end(JSON.stringify(data))
+    caller.close()
   })
+  
+  caller.performanceAction({action:'test action1'+(new Date()).getTime()})
 })
 
 function ws_handler(socket) {
@@ -106,13 +113,13 @@ function ws_handler(socket) {
           intents:response.intents,
           entities:response.entities})
           
+        console.log('server response:'+JSON.stringify(response))
+
         if (response.actions) {
-            console.log('response with action:'+JSON.stringify(response))
-        }
-        if (response.actions) {
-          performanceAction(response.actions[0], (res_data)=>{
+          var caller = new ActionCaller((res_data)=>{
             socket.emit('action.status', res_data)
           })
+          caller.performanceAction(response.actions[0])
         }
       })
   })
