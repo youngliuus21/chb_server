@@ -52,12 +52,12 @@ function ActionCaller(callback) {
     
       if (this.actResFun)
         this.actResFun(data)
-      if (data && data.close == true)//server tells me to close
+      if (data && data.done == true)//server tells me to close
         this.close()
     })
   }
 
-  this.performanceAction = function(data) {
+  this.performAction = function(data) {
     if (!this.act_socket)
       this.openActSocket()
     
@@ -77,7 +77,7 @@ router.get('/test', (req, res)=>{
     caller.close()
   })
   
-  caller.performanceAction({action:'test action1'+(new Date()).getTime()})
+  caller.performAction({name:'test action1'+(new Date()).getTime()})
 })
 
 function ws_handler(socket) {
@@ -93,35 +93,59 @@ function ws_handler(socket) {
     
     console.log('dialog.input received:'+JSON.stringify(data))
     
-    getService().message({
-      workspace_id: workspace_id,
-      input: {text:input},
-      context:socket.request.session.dialog_context
-      }, function(err, response){
-        if (err) {
-          console.error(err)
-          res.json({ok:false, err:err})
-          return
-        }
+    var serviceMsgCallack = function(err, response){
+      if (err) {
+        console.error(err)
+        res.json({ok:false, err:err})
+        return
+      }
+    
+      console.log('server response:'+JSON.stringify(response))
+    
+      socket.request.session.dialog_context = response.context
       
-        roundResponse(response)
-        socket.request.session.dialog_context = response.context
+      if (response.context.skip_user_input == true) {
+        if (response.actions) {
+          
+          var act = response.actions[0]
+          var dialog_context = response.context
+          
+          console.log('before perform action:'+act.name)
+          
+          var caller = new ActionCaller((res_data)=>{
+            socket.emit('action.status', res_data)
+            
+            if (res_data.done) {
+              
+              dialog_context[act.result_variable] = res_data.result
+              socket.request.session.dialog_context = dialog_context
+              
+              getService().message({
+                workspace_id: workspace_id,
+                input: response.input,
+                intents:response.intents,
+                entities:response.entities,
+                context:dialog_context
+                }, serviceMsgCallack)
+            }
+          })
+          caller.performAction(response.actions[0])
+        }
         
+      } else {
         socket.emit('dialog.output', {ok:true, output:response.output.text,
           input:response.input,
           client_seq:data.client_seq,
           intents:response.intents,
           entities:response.entities})
-          
-        console.log('server response:'+JSON.stringify(response))
-
-        if (response.actions) {
-          var caller = new ActionCaller((res_data)=>{
-            socket.emit('action.status', res_data)
-          })
-          caller.performanceAction(response.actions[0])
-        }
-      })
+      }
+    }
+      
+    getService().message({
+      workspace_id: workspace_id,
+      input: {text:input},
+      context:socket.request.session.dialog_context
+      }, serviceMsgCallack)
   })
 }
 
