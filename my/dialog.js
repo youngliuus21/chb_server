@@ -112,21 +112,22 @@ function ws_handler(socket) {
           
           console.log('before perform action:'+act.name)
           
+          dialog_context[act.result_variable] = 'ok'
+          socket.request.session.dialog_context = dialog_context
+          
+          getService().message({
+            workspace_id: workspace_id,
+            input: response.input,
+            intents:response.intents,
+            entities:response.entities,
+            context:dialog_context
+            }, serviceMsgCallack)
+
           var caller = new ActionCaller((res_data)=>{
             socket.emit('action.status', res_data)
             
             if (res_data.done) {
               
-              dialog_context[act.result_variable] = res_data.result
-              socket.request.session.dialog_context = dialog_context
-              
-              getService().message({
-                workspace_id: workspace_id,
-                input: response.input,
-                intents:response.intents,
-                entities:response.entities,
-                context:dialog_context
-                }, serviceMsgCallack)
             }
           })
           caller.performAction(response.actions[0])
