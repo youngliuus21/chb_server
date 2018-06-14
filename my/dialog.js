@@ -2,6 +2,7 @@ var express = require('express')
 var bodyParser = require('body-parser')
 var AssistantV1 = require('watson-developer-cloud/assistant/v1')
 var io = require('socket.io-client')
+var Request = require('request')
 
 var router = express.Router()
 var jsonParser = bodyParser.json()
@@ -69,6 +70,14 @@ function ActionCaller(callback) {
       this.act_socket.close()
   }
 }
+
+router.get('/img', (req, res) => {
+  var remote = 'http://localhost:19999/static/' + req.query.fname
+  
+  var x = Request(remote)
+  req.pipe(x)
+  x.pipe(res)
+})
 
 router.get('/test', (req, res)=>{
   var caller = new ActionCaller(function(data){
