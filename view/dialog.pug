@@ -39,7 +39,7 @@ html
                 div(class="carousel-inner")
                   template(v-for="(screen, index) in screenshots")
                     div(class="carousel-item" v-bind:class="{ active: index == screenshots.length-1}")
-                      img(class="d-block w-100" v-bind:src="'/dialog/img?fname='+screen.screen")
+                      img(class="d-block w-100" v-bind:src="'/dialog/img?fname='+screen.screen" v-on:click="preview_screen('/dialog/img?fname='+screen.screen)")
                 a(class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev")
                   span(class="carousel-control-prev-icon" aria-hidden="true")
                   span(class="sr-only")  Previous
@@ -74,6 +74,17 @@ html
                 @keyup.enter="ws_sub_input"
                 @keyup.up="sel_msg_log_up"
                 @keyup.down="sel_msg_log_down")
+    div(class="screen_preview_modal modal fade" tabindex="-1" role="dialog")
+      div(class="modal-dialog modal-lg" role="document" style="max-width:90%")
+        div(class="modal-content")
+          div(class="modal-header")
+            h5(class="modal-title") Screen Shot
+            button(type="button" class="close" data-dismiss="modal" aria-label="Close")
+              span(aria-hidden="true") &times
+          div(class="modal-body")
+            img(id='preview_img' class="img-responsive" style="width:100%" src="")
+          div(class="modal-footer")
+            button(type="button" class="btn btn-secondary" data-dismiss="modal") Close
     
     script(src="https://code.jquery.com/jquery-3.3.1.min.js" 
       integrity="sha384-tsQFqpEReu7ZLhBV2VZlAu7zcOV+rXbYlF2cqB8txI/8aZajjp4Bqd+V6D5IgvKT" 
@@ -207,6 +218,10 @@ html
           },
           sel_msg_log_down: function(event){
             this.input_text = msgLogger.getNextMsgLog()
+          },
+          preview_screen: function(img_url) {
+            $('#preview_img').attr("src", img_url)
+            $('.screen_preview_modal').modal()
           },
           ws_sub_input: function(event) {
             console.log('ws user input:'+this.input_text)
