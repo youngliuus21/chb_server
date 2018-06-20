@@ -92,6 +92,18 @@ router.get('/test', (req, res)=>{
 function ws_handler(socket) {
   console.log((new Date()).toString()+' socket connected...')
   
+  socket.sendCustomMsgAndCallback = function(event, data, callback) {
+    this.emit(event, data)
+    var res_event = event+'.response'
+    this[res_event] = callback
+    
+    this.on(res_event, (res_data)=>{
+      
+      if (callback)
+        callback(res_data)
+    })
+  }
+  
   socket.on('dialog.reset', (data) => {
     socket.request.session.dialog_context = null
     socket.emit('action.status', {text:'reset success.'})
@@ -132,14 +144,23 @@ function ws_handler(socket) {
             context:dialog_context
             }, serviceMsgCallack)
 
-          var caller = new ActionCaller((res_data)=>{
-            socket.emit('action.status', res_data)
-            
-            if (res_data.done) {
-              
-            }
-          })
-          caller.performAction(response.actions[0])
+          if (socket.request.session.sso) {
+            var caller = new ActionCaller((res_data)=>{
+              socket.emit('action.status', res_data)//send status to browser
+            })
+            caller.performAction(response.actions[0])//send reqeust to action server
+          } else {
+            socket.sendCustomMsgAndCallback('dialog.login', {}, function(login_res){
+              console.log('get dialog.login.response:'+JSON.stringify(cust_res.username))
+              socket.request.session.sso = login_res
+              var caller = new ActionCaller((res_data)=>{
+                socket.emit('action.status', res_data)
+              })
+              var act = response.actions[0]
+              act.sso = login_res
+              caller.performAction(act)
+            })
+          }
         }
         
       } else {
