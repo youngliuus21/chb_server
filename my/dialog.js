@@ -99,8 +99,11 @@ function ws_handler(socket) {
     
     this.on(res_event, (res_data)=>{
       
-      if (callback)
-        callback(res_data)
+      var r_callback = this[res_event]
+      if (r_callback) {
+        r_callback(res_data)
+        this[res_event] = null
+      }
     })
   }
   
@@ -121,7 +124,7 @@ function ws_handler(socket) {
         return
       }
     
-      console.log('server response:'+JSON.stringify(response))
+      console.log((new Date()).toString()+' server response:'+JSON.stringify(response))
     
       socket.request.session.dialog_context = response.context
       
@@ -136,7 +139,7 @@ function ws_handler(socket) {
           dialog_context[act.result_variable] = 'ok'
           socket.request.session.dialog_context = dialog_context
           
-          getService().message({
+          getService().message({//tell dialog to continue
             workspace_id: workspace_id,
             input: response.input,
             intents:response.intents,
@@ -148,15 +151,16 @@ function ws_handler(socket) {
             var caller = new ActionCaller((res_data)=>{
               socket.emit('action.status', res_data)//send status to browser
             })
-            caller.performAction(response.actions[0])//send reqeust to action server
+            act.sso = socket.request.session.sso
+            console.log('login info:'+JSON.stringify(act.sso.username))
+            caller.performAction(act)//send reqeust to action server
           } else {
             socket.sendCustomMsgAndCallback('dialog.login', {}, function(login_res){
-              console.log('get dialog.login.response:'+JSON.stringify(cust_res.username))
+              console.log('get dialog.login.response:'+JSON.stringify(login_res.username))
               socket.request.session.sso = login_res
               var caller = new ActionCaller((res_data)=>{
                 socket.emit('action.status', res_data)
               })
-              var act = response.actions[0]
               act.sso = login_res
               caller.performAction(act)
             })
