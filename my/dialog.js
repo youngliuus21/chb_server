@@ -46,7 +46,7 @@ function ActionCaller(callback) {
   this.act_socket = null
   this.actResFun = callback
   this.openActSocket = function() {
-    this.act_socket = io('http://localhost:19999/action')
+    this.act_socket = io('http://slc10xps.us.oracle.com:19999/action')
   
     this.act_socket.on('act.status', (data) => {
       console.log('act.status, get data:'+JSON.stringify(data))
@@ -72,7 +72,7 @@ function ActionCaller(callback) {
 }
 
 router.get('/img', (req, res) => {
-  var remote = 'http://localhost:19999/static/' + req.query.fname
+  var remote = 'http://slc10xps.us.oracle.com:19999/static/' + req.query.fname
   
   var x = Request(remote)
   req.pipe(x)
@@ -139,17 +139,28 @@ function ws_handler(socket) {
           dialog_context[act.result_variable] = 'ok'
           socket.request.session.dialog_context = dialog_context
           
-          getService().message({//tell dialog to continue
-            workspace_id: workspace_id,
-            input: response.input,
-            intents:response.intents,
-            entities:response.entities,
-            context:dialog_context
-            }, serviceMsgCallack)
+          var func_dialog_resp = function() {
+            getService().message({//tell dialog to continue
+              workspace_id: workspace_id,
+              input: response.input,
+              intents:response.intents,
+              entities:response.entities,
+              context:dialog_context
+              }, serviceMsgCallack)
+          }
+          var sync_call = act.parameters || act.parameters.sync == 'true'
+          if (!sync_call)
+            func_dialog_resp()
 
           if (socket.request.session.sso) {
             var caller = new ActionCaller((res_data)=>{
               socket.emit('action.status', res_data)//send status to browser
+              if (sync_call && res_data.res != undefined) {
+                for (var pn in res_data) {
+                  dialog_context.pn = res_data[pn]
+                }
+                func_dialog_resp()
+              }
             })
             act.sso = socket.request.session.sso
             console.log('login info:'+JSON.stringify(act.sso.username))
@@ -160,6 +171,12 @@ function ws_handler(socket) {
               socket.request.session.sso = login_res
               var caller = new ActionCaller((res_data)=>{
                 socket.emit('action.status', res_data)
+                if (sync_call && res_data.res != undefined) {
+                  for (var pn in res_data) {
+                    dialog_context.pn = res_data[pn]
+                  }
+                  func_dialog_resp()
+                }
               })
               act.sso = login_res
               caller.performAction(act)
