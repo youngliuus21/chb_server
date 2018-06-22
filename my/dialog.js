@@ -3,7 +3,7 @@ var bodyParser = require('body-parser')
 var AssistantV1 = require('watson-developer-cloud/assistant/v1')
 var io = require('socket.io-client')
 var Request = require('request')
-
+var config = require('config')
 var router = express.Router()
 var jsonParser = bodyParser.json()
 var mysecret = require('./mysecret').secret
@@ -13,7 +13,7 @@ router.get('/', function(req, res){
 })
 
 var service = null
-var workspace_id = mysecret.workspace_id
+var workspace_id = config.get('workspace_id')
 
 function getService() {
   if (service != null) {
@@ -46,14 +46,14 @@ function ActionCaller(callback) {
   this.act_socket = null
   this.actResFun = callback
   this.openActSocket = function() {
-    this.act_socket = io('http://slc10xps.us.oracle.com:19999/action')
+    this.act_socket = io(config.get('action_server')+'/action')
   
     this.act_socket.on('act.status', (data) => {
       console.log('act.status, get data:'+JSON.stringify(data))
     
       if (this.actResFun)
         this.actResFun(data)
-      if (data && data.done == true)//server tells me to close
+      if (data && data.close == true)//server tells me to close
         this.close()
     })
   }
@@ -72,7 +72,7 @@ function ActionCaller(callback) {
 }
 
 router.get('/img', (req, res) => {
-  var remote = 'http://slc10xps.us.oracle.com:19999/static/' + req.query.fname
+  var remote = config.get('action_server') + '/static/' + req.query.fname
   
   var x = Request(remote)
   req.pipe(x)
@@ -171,10 +171,8 @@ function ws_handler(socket) {
               socket.request.session.sso = login_res
               var caller = new ActionCaller((res_data)=>{
                 socket.emit('action.status', res_data)
-                if (sync_call && res_data.res != undefined) {
-                  for (var pn in res_data) {
-                    dialog_context.pn = res_data[pn]
-                  }
+                if (sync_call && res_data.done == true) {
+                  dialog_context['res_check'] = res_data
                   func_dialog_resp()
                 }
               })
