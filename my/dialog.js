@@ -120,7 +120,7 @@ function ws_handler(socket) {
     var serviceMsgCallack = function(err, response){
       if (err) {
         console.error(err)
-        res.json({ok:false, err:err})
+        socket.emit('dialog.output', {ok:false, output:err})
         return
       }
     
@@ -161,11 +161,12 @@ function ws_handler(socket) {
           if (!sync_call)
             func_dialog_resp()
 
+          var result_var_name = act.result_variable
           if (socket.request.session.sso) {
             var caller = new ActionCaller((res_data)=>{
               socket.emit('action.status', res_data)//send status to browser
               if (sync_call && res_data.res != undefined) {
-                dialog_context['res_check'] = res_data
+                dialog_context[result_var_name] = res_data
                 func_dialog_resp()
               }
             })
@@ -179,7 +180,7 @@ function ws_handler(socket) {
               var caller = new ActionCaller((res_data)=>{
                 socket.emit('action.status', res_data)
                 if (sync_call && res_data.done == true) {
-                  dialog_context['res_check'] = res_data
+                  dialog_context[result_var_name] = res_data
                   func_dialog_resp()
                 }
               })
