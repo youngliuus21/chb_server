@@ -128,7 +128,16 @@ function ws_handler(socket) {
     
       socket.request.session.dialog_context = response.context
       
+      if (response.output.text != '') {
+        socket.emit('dialog.output', {ok:true, output:response.output.text,
+          input:response.input,
+          client_seq:data.client_seq,
+          intents:response.intents,
+          entities:response.entities})
+      }
+      
       if (response.context.skip_user_input == true) {
+        
         if (response.actions) {
           
           var act = response.actions[0]
@@ -156,9 +165,7 @@ function ws_handler(socket) {
             var caller = new ActionCaller((res_data)=>{
               socket.emit('action.status', res_data)//send status to browser
               if (sync_call && res_data.res != undefined) {
-                for (var pn in res_data) {
-                  dialog_context.pn = res_data[pn]
-                }
+                dialog_context['res_check'] = res_data
                 func_dialog_resp()
               }
             })
@@ -181,13 +188,6 @@ function ws_handler(socket) {
             })
           }
         }
-        
-      } else {
-        socket.emit('dialog.output', {ok:true, output:response.output.text,
-          input:response.input,
-          client_seq:data.client_seq,
-          intents:response.intents,
-          entities:response.entities})
       }
     }
       
