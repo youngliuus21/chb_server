@@ -109,6 +109,7 @@ function ws_handler(socket) {
   
   socket.on('dialog.reset', (data) => {
     socket.request.session.dialog_context = null
+    socket.request.session.sso = null
     socket.emit('action.status', {text:'reset success.'})
   })
   
