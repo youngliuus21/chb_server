@@ -72,7 +72,7 @@ function ActionCaller(callback) {
 }
 
 router.get('/img', (req, res) => {
-  var remote = config.get('action_server') + '/static/' + req.query.fname
+  var remote = config.get('screenshot_server') + '/static/' + req.query.fname
   
   var x = Request(remote)
   req.pipe(x)

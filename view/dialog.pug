@@ -16,13 +16,16 @@ html
               ul(class="nav nav-tabs card-header-tabs")
                 li.nav-item
                   a(class="nav-link" v-bind:class="{ active: show_status_card == 0 }" 
-                    v-on:click.stop.prevent="show_status_card=0") Dialog Analysis
+                    v-on:click.stop.prevent="show_status_card=0") Dialog Analysis 
+                    span(class="badge badge-success" v-if="entities.length > 0") {{entities.length}}
                 li.nav-item
                   a(class="nav-link" v-bind:class="{ active: show_status_card == 1 }" 
-                    v-on:click.stop.prevent="show_status_card=1") Screen Shots
+                    v-on:click.stop.prevent="show_status_card=1") Screen Shots 
+                    span(class="badge badge-success" v-if="screenshots.length > 0") {{screenshots.length}}
                 li.nav-item
                   a(class="nav-link" v-bind:class="{ active: show_status_card == 2 }"
-                    v-on:click.stop.prevent="show_status_card=2") Action Status
+                    v-on:click.stop.prevent="show_status_card=2") Action Status 
+                    span(class="badge badge-success" v-if="action_status.length > 0") {{action_status.length}}
             div(class="card-body" v-if="show_status_card == 0")
               template(v-if="intents.length > 0")
                 h5.card-title Intents
