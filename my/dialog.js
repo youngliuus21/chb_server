@@ -168,7 +168,8 @@ function ws_handler(socket) {
               socket.emit('action.status', res_data)//send status to browser
               if (sync_call && res_data.res != undefined) {
                 dialog_context[result_var_name] = res_data
-                func_dialog_resp()
+                if (sync_call)
+                  func_dialog_resp()
               }
             })
             act.sso = socket.request.session.sso
@@ -182,7 +183,8 @@ function ws_handler(socket) {
                 socket.emit('action.status', res_data)
                 if (sync_call && res_data.done == true) {
                   dialog_context[result_var_name] = res_data
-                  func_dialog_resp()
+                  if (sync_call)
+                    func_dialog_resp()
                 }
               })
               act.sso = login_res
