@@ -309,8 +309,11 @@ html
         ws_socket.on('action.status', (res) => {
           console.log('ws received:'+JSON.stringify(res))
           app.action_status.push({text:res.text})
-          if (res.screen)
+          app.show_status_card = 2
+          if (res.screen) {
             app.screenshots.push(res)
+            app.show_status_card = 1
+          }
         })
         
         ws_socket.on('dialog.login', (res) => {
