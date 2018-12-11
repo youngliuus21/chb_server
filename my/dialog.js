@@ -23,7 +23,8 @@ function getService() {
   service = new AssistantV1({
     "username": mysecret.username,
     "password": mysecret.password,
-    version: '2018-02-16'
+    url: "https://gateway.watsonplatform.net/assistant/api",
+    version: '2018-09-20'
   })
   
   return service
