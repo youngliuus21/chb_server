@@ -47,7 +47,7 @@ function ActionCaller(callback) {
   this.act_socket = null
   this.actResFun = callback
   this.openActSocket = function() {
-    this.act_socket = io(config.get('action_server')+'/action')
+    this.act_socket = io(process.env.action_server+'/action')
   
     this.act_socket.on('act.status', (data) => {
       console.log('act.status, get data:'+JSON.stringify(data))
@@ -73,7 +73,7 @@ function ActionCaller(callback) {
 }
 
 router.get('/img', (req, res) => {
-  var remote = config.get('screenshot_server') + '/static/' + req.query.fname
+  var remote = process.env.action_server + '/static/' + req.query.fname
   
   var x = Request(remote)
   req.pipe(x)
