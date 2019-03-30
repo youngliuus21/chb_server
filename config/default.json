@@ -1,5 +1,3 @@
 {
-  "action_server":"http://slc10xps.us.oracle.com:19999",
-  "screenshot_server":"http://localhost:19999",
   "workspace_id":"3021ffa3-d1a5-492b-b2ee-d894dfbc267e"
 }
