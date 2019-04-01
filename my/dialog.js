@@ -47,8 +47,9 @@ function ActionCaller(callback) {
   this.act_socket = null
   this.actResFun = callback
   this.openActSocket = function() {
-    this.act_socket = io(process.env.action_server+'/action')
-  
+    this.act_socket = io(process.env.ACTION_SERVER+'/action')
+    console.log('after connect' + process.env.ACTION_SERVER+'/action')
+
     this.act_socket.on('act.status', (data) => {
       console.log('act.status, get data:'+JSON.stringify(data))
     
@@ -57,13 +58,26 @@ function ActionCaller(callback) {
       if (data && data.close == true)//server tells me to close
         this.close()
     })
+
+    this.act_socket.on('connect_error', (err) => {
+      console.log('connect_error: ' + JSON.stringify(err))
+    })
+
+    this.act_socket.on('connect_timeout', (err) => {
+      console.log('connect_timeout: ' + JSON.stringify(err))
+    })
+
+    this.act_socket.on('error', (err) => {
+      console.log('error: ' + JSON.stringify(err))
+    })
   }
 
   this.performAction = function(data) {
     if (!this.act_socket)
       this.openActSocket()
-    
+    console.log('before emit: '+JSON.stringify(data)) 
     this.act_socket.emit('dialog.act', data)
+    console.log('after emit')
   }
   
   this.close = function() {
@@ -73,7 +87,7 @@ function ActionCaller(callback) {
 }
 
 router.get('/img', (req, res) => {
-  var remote = process.env.action_server + '/static/' + req.query.fname
+  var remote = process.env.ACTION_SERVER + '/static/' + req.query.fname
   
   var x = Request(remote)
   req.pipe(x)
