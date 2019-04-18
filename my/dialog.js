@@ -75,9 +75,7 @@ function ActionCaller(callback) {
   this.performAction = function(data) {
     if (!this.act_socket)
       this.openActSocket()
-    console.log('before emit: '+JSON.stringify(data)) 
     this.act_socket.emit('dialog.act', data)
-    console.log('after emit')
   }
   
   this.close = function() {

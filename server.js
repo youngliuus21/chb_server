@@ -50,6 +50,10 @@ function startServer(){
     
     app.use('/dialog', dialog)
     
+    app.all('/', function(req, res){
+        res.redirect('/dialog')
+    })
+    
     var server = require('http').createServer(app)
 
     startWebSocket(server, mySession)
