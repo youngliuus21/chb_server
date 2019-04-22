@@ -64,6 +64,8 @@ html
                   template(v-if="msg.withentity == true")
                     span(v-for="span in msg.spans" 
                       v-bind:style="{'text-decoration':span.isentity?'underline':'none'}") {{span.text}}
+                  template(v-else-if="msg.is_status == true")
+                    span(style="font-size:90%;color:gray;") {{msg.text}}
                   template(v-else)
                     span {{msg.text}}
 
@@ -307,7 +309,11 @@ html
         ws_socket.on('action.status', (res) => {
           console.log('ws received:'+JSON.stringify(res))
           app.action_status.push({text:res.text})
-          app.show_status_card = 2
+          if (res.text)
+            app.messages.push({text:'['+res.text+']', is_status:true})
+          else if (res.result)
+            app.messages.push({text:'[result:'+res.result+']', is_status:true})
+
           if (res.screen) {
             app.screenshots.push(res)
             app.show_status_card = 1
