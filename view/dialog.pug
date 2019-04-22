@@ -71,7 +71,7 @@ html
             div(class="input-group")
               div(class="input-group-prepend")
                 span(class="input-group-text" id="basic-addon1") >
-              input(type="text" class="form-control" placeholder="start typing here..." 
+              input(name="dialog_text" type="text" class="form-control" autocomplete="off" placeholder="start typing here..." 
                 aria-describedby="basic-addon1"
                 v-model="input_text"
                 @keyup.enter="ws_sub_input"
@@ -98,10 +98,10 @@ html
           div(class="modal-body")
             div(class="form-group")
               label(for="username" class="col-form-label") User Name:
-              input(type="text" class="form-control" id="username")
+              input(type="text" class="form-control" id="username" name="username" autocomplete="username")
             div(class="form-group")
               label(for="pwd" class="col-form-label") Password:
-              input(type="password" class="form-control" id="pwd")
+              input(type="password" class="form-control" id="pwd" name="password" autocomplete="password")
           div(class="modal-footer")
             button(type="button" class="btn btn-secondary" data-dismiss="modal") Login
     
